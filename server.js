@@ -9,39 +9,36 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 
-// Serve Frontend Static Files
+// Serve Static Frontend Files
 app.use(express.static(path.join(__dirname)));
 
 const token = process.env.BOT_TOKEN;
 const mongoUri = process.env.MONGODB_URI;
 
-// Connection
+// MongoDB Connection
 mongoose.connect(mongoUri)
-  .then(() => console.log('MongoDB Connected...'))
+  .then(() => console.log('MongoDB Connected Successfully...'))
   .catch(err => console.log('MongoDB Connection Error:', err));
 
-// MongoDB Schema for User
+// Schema Definition
 const userSchema = new mongoose.Schema({
   telegramId: { type: String, required: true, unique: true },
-  balance: { type: Number, default: 0 }, // Sirf earned/mined balance
-  ghs: { type: Number, default: 1 }     // Mining Power
+  balance: { type: Number, default: 0 }, // Mined/Claimed Balance
+  ghs: { type: Number, default: 10 }     // Default 10 GHS
 });
 
 const User = mongoose.model('User', userSchema);
 
 const bot = new TelegramBot(token, { polling: true });
-
-// ADMIN TELEGRAM ID
 const ADMIN_ID = '7437877993';
 
-// Start Command
+// Bot /start Command
 bot.onText(/\/start/, (msg) => {
-  const chatId = msg.chat.id;
-  bot.sendMessage(chatId, 'Hello! Your bot is running successfully.');
+  bot.sendMessage(msg.chat.id, 'Welcome to Nexhash Mining Bot!');
 });
 
 // Admin Command: /addbalance <user_id> <amount>
-// (Deposit karne par balance nahi, balki sirf GHS/Mining Power badhegi ya agar balance dena ho toh inc karega)
+// Example: /addbalance 5136435206 10
 bot.onText(/\/addbalance (\d+) (\d+)/, async (msg, match) => {
   const chatId = msg.chat.id;
   const senderId = msg.from.id.toString();
@@ -52,64 +49,82 @@ bot.onText(/\/addbalance (\d+) (\d+)/, async (msg, match) => {
 
   const targetUserId = match[1];
   const amount = parseFloat(match[2]);
-  const ghsToAdd = amount; // $10 deposit = 10 GHS power
+  const ghsToAdd = amount; 
 
   try {
     const updatedUser = await User.findOneAndUpdate(
       { telegramId: targetUserId },
-      { 
-        $inc: { 
-          ghs: ghsToAdd  // Deposit se sirf GHS power badhegi
-        } 
-      },
+      { $inc: { ghs: ghsToAdd } },
       { new: true, upsert: true }
     );
 
     bot.sendMessage(
       chatId, 
-      `✅ **Success!**\n\nUser ID: \`${targetUserId}\` ko ${ghsToAdd} GHS mining power successfully add kar di gayi hai.`
+      `✅ **Success!**\n\nUser ID: \`${targetUserId}\` ko +${ghsToAdd} GHS mining power add kar di gayi hai.`
     );
 
     bot.sendMessage(
       targetUserId, 
       `🎉 **Deposit Approved!**\n\nAapka deposit approve ho gaya hai.\n⚡ **Mining Power Added:** +${ghsToAdd} GHS`
     );
-
   } catch (error) {
-    console.error("Error updating GHS:", error);
-    bot.sendMessage(chatId, "❌ Error adding GHS to database.");
+    console.error("Error adding GHS:", error);
+    bot.sendMessage(chatId, "❌ Error updating database.");
   }
 });
 
-// API ROUTE: Get User Data
+// API: Fetch User Data
 app.get('/api/user/:telegramId', async (req, res) => {
   try {
     const telegramId = req.params.telegramId;
     let user = await User.findOne({ telegramId });
-    
+
     if (!user) {
-      user = await User.create({ telegramId, balance: 0, ghs: 1 });
+      user = await User.create({ telegramId, balance: 0, ghs: 10 });
     }
 
     res.json({
       success: true,
       balance: user.balance || 0,
-      ghs: user.ghs || 1
+      ghs: user.ghs || 10
     });
   } catch (error) {
-    console.error("API Error:", error);
+    console.error("API Fetch Error:", error);
     res.status(500).json({ success: false, error: error.message });
   }
 });
 
-// API ROUTE: Withdraw Balance (Deducts balance from DB)
+// API: Claim Mining Reward
+app.post('/api/claim', async (req, res) => {
+  try {
+    const { telegramId, claimedAmount } = req.body;
+    const amount = parseFloat(claimedAmount);
+
+    if (!telegramId || isNaN(amount) || amount <= 0) {
+      return res.status(400).json({ success: false, error: "Invalid amount" });
+    }
+
+    const user = await User.findOneAndUpdate(
+      { telegramId },
+      { $inc: { balance: amount } },
+      { new: true }
+    );
+
+    res.json({ success: true, newBalance: user ? user.balance : 0 });
+  } catch (error) {
+    console.error("Claim API Error:", error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// API: Withdraw Request (Deducts Balance from Database)
 app.post('/api/withdraw', async (req, res) => {
   try {
     const { telegramId, amount } = req.body;
     const withdrawAmount = parseFloat(amount);
 
-    if (!telegramId || isNaN(withdrawAmount) || withdrawAmount <= 0) {
-      return res.status(400).json({ success: false, error: "Invalid data" });
+    if (!telegramId || isNaN(withdrawAmount) || withdrawAmount < 0.5) {
+      return res.status(400).json({ success: false, error: "Invalid withdrawal request" });
     }
 
     const user = await User.findOne({ telegramId });
@@ -117,7 +132,6 @@ app.post('/api/withdraw', async (req, res) => {
       return res.status(400).json({ success: false, error: "Insufficient balance" });
     }
 
-    // Deduct balance from database
     user.balance -= withdrawAmount;
     await user.save();
 
@@ -132,4 +146,3 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
-
