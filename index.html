@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Nexhash Mining</title>
+    <!-- Telegram WebApp Script -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Style CSS -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Top Bar Header -->
+    <header class="header">
+        <div class="user-info">
+            <div class="avatar"><i class="fa-solid fa-user"></i></div>
+            <div class="user-details">
+                <div id="username" class="username">User</div>
+                <div class="user-id">ID: <span id="user-id">000000000</span></div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Ticker Banner -->
+    <div class="ticker-banner">
+        <span class="ticker-label">LIVE</span>
+        <div id="ticker-text" class="ticker-content">
+            <span class="tag deposit">DEPOSIT</span> User...5358 deposited 13.93 USDT
+        </div>
+    </div>
+
+    <!-- Main Content Container -->
+    <main class="main-container">
+        <!-- TAB 1: MINING DASHBOARD -->
+        <section id="tab-mining" class="tab-content active">
+            <div class="section-title">
+                <h2>⚡ MINING DASHBOARD</h2>
+                <p>Real-time cloud mining algorithm</p>
+            </div>
+
+            <!-- Stats Grid -->
+            <div class="stats-grid">
+                <div class="stat-box">
+                    <div class="stat-label">Total Balance</div>
+                    <div class="stat-value">$<span id="balance-val">0.00000000</span></div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">Mining Power</div>
+                    <div class="stat-value"><span id="ghs-value">1.00</span> GHS</div>
+                </div>
+            </div>
+
+            <!-- Live Unclaimed Earnings Box -->
+            <div class="card mining-box">
+                <div class="mining-label">UNCLAIMED REWARD</div>
+                <div class="mined-counter">+<span id="mined-usdt">0.00000000</span> USDT</div>
+                <button class="btn btn-claim" onclick="claimReward()"><i class="fa-solid fa-hand-holding-dollar"></i> CLAIM REWARD</button>
+            </div>
+
+            <!-- Hashrate Calculator Card -->
+            <div class="card calc-card">
+                <h3><i class="fa-solid fa-calculator"></i> Profit Calculator</h3>
+                <div class="input-group">
+                    <label>Deposit Amount (USDT)</label>
+                    <input type="number" id="deposit-amount" value="10" min="1" oninput="calcProfit()">
+                </div>
+                <div class="calc-results">
+                    <div class="calc-item">
+                        <span>GHS Power:</span>
+                        <strong id="calc-ghs">10</strong> GHS
+                    </div>
+                    <div class="calc-item">
+                        <span>Daily Return (30%):</span>
+                        <strong id="daily-profit">3.00 USDT</strong>
+                    </div>
+                    <div class="calc-item">
+                        <span>15-Day Return:</span>
+                        <strong id="total-profit">45.00 USDT</strong>
+                    </div>
+                </div>
+                <button class="btn btn-primary" onclick="openCoinModal()"><i class="fa-solid fa-bolt"></i> BUY MINING POWER</button>
+            </div>
+        </section>
+
+        <!-- TAB 2: TASKS -->
+        <section id="tab-tasks" class="tab-content">
+            <div class="section-title">
+                <h2>🎯 BOUNTY TASKS</h2>
+                <p>Complete simple missions for free power</p>
+            </div>
+
+            <!-- Join Telegram Task -->
+            <div class="task-card">
+                <div class="task-details">
+                    <h4>Join Telegram Channel</h4>
+                    <p>Reward: +0.01 GHS Power</p>
+                </div>
+                <button id="btn-task-1" class="btn btn-task" onclick="handleTask('1', 'https://t.me/Nexhashmining')">JOIN</button>
+            </div>
+
+            <!-- Invite 2 Friends Task -->
+            <div class="task-card">
+                <div class="task-details">
+                    <h4>Invite 2 Friends</h4>
+                    <p>Reward: +0.05 GHS Power</p>
+                </div>
+                <button id="btn-task-2" class="btn btn-task" onclick="switchTab('invite')">INVITE</button>
+            </div>
+        </section>
+
+        <!-- TAB 3: INVITE / REFERRAL -->
+        <section id="tab-invite" class="tab-content">
+            <div class="section-title">
+                <h2>🤝 INVITE FRIENDS</h2>
+                <p>Earn multi-level referral commissions</p>
+            </div>
+
+            <div class="card ref-card">
+                <h3>Your Referral Link</h3>
+                <div class="copy-box">
+                    <input type="text" id="ref-link" readonly value="https://t.me/Nexhashminingbot?start=000">
+                    <button onclick="copyRef()"><i class="fa-solid fa-copy"></i></button>
+                </div>
+            </div>
+
+            <!-- Referral Level Commissions Tier -->
+            <div class="card levels-card">
+                <h3>Commission Rates</h3>
+                <div class="level-row">
+                    <span>Level 1 (Direct Invites)</span>
+                    <strong class="highlight">10% Commission</strong>
+                </div>
+                <div class="level-row">
+                    <span>Level 2 (Friends' Friends)</span>
+                    <strong class="highlight">3% Commission</strong>
+                </div>
+                <div class="level-row">
+                    <span>Level 3 (Network)</span>
+                    <strong class="highlight">2% Commission</strong>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 4: WALLET & WITHDRAW -->
+        <section id="tab-wallet" class="tab-content">
+            <div class="section-title">
+                <h2>💼 WALLET & WITHDRAW</h2>
+                <p>Fast BEP-20 payouts to your wallet</p>
+            </div>
+
+            <div class="card balance-card">
+                <span>Available Balance</span>
+                <h2>$<span id="wallet-balance">0.00</span> USDT</h2>
+            </div>
+
+            <div class="card withdraw-card">
+                <h3>Request Instant Withdrawal</h3>
+                <div class="input-group">
+                    <label>USDT BEP-20 Wallet Address</label>
+                    <input type="text" id="withdraw-addr" placeholder="0x...">
+                </div>
+                <div class="input-group">
+                    <label>Amount to withdraw (Minimum 0.5 USDT)</label>
+                    <input type="number" id="withdraw-amt" placeholder="0.5" step="0.1" min="0.5">
+                </div>
+                <button class="btn btn-withdraw" onclick="submitWithdraw()"><i class="fa-solid fa-paper-plane"></i> SUBMIT WITHDRAWAL</button>
+            </div>
+        </section>
+    </main>
+
+    <!-- Deposit Coin Selection Modal -->
+    <div id="payment-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeModal()">&times;</span>
+            <h3 id="modal-title">Select Deposit Network</h3>
+            
+            <div class="coin-list" style="margin-top:15px;">
+                <div class="coin-card" onclick="selectCoinAndPay('USDT')">
+                    <div class="coin-info">
+                        <i class="fa-solid fa-dollar-sign coin-icon usdt"></i>
+                        <div>
+                            <h4>USDT (BEP-20)</h4>
+                            <p>BNB Smart Chain</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="coin-card" onclick="selectCoinAndPay('TRX')">
+                    <div class="coin-info">
+                        <i class="fa-solid fa-coins coin-icon trx"></i>
+                        <div>
+                            <h4>TRX (TRC-20)</h4>
+                            <p>TRON Network</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="modal-pay-details" style="display:none; margin-top:15px;">
+                <p>Send Amount: <strong id="modal-deposit-amt">10.00 USDT</strong></p>
+                <div class="input-group" style="margin-top:10px;">
+                    <label>Deposit Address</label>
+                    <div class="copy-box">
+                        <input type="text" id="modal-wallet-addr" readonly value="0x...">
+                        <button onclick="copyWalletAddress()"><i class="fa-solid fa-copy"></i></button>
+                    </div>
+                </div>
+                <div class="input-group">
+                    <label>Transaction Hash / TxID</label>
+                    <input type="text" id="tx-hash-input" placeholder="Paste TxHash here after payment">
+                </div>
+                <button class="btn btn-primary" onclick="submitDepositHash()">SUBMIT TXHASH</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bottom Navigation Bar -->
+    <nav class="bottom-nav">
+        <div class="nav-item active" onclick="switchTab('mining')">
+            <i class="fa-solid fa-microchip"></i>
+            <span>Mining</span>
+        </div>
+        <div class="nav-item" onclick="switchTab('tasks')">
+            <i class="fa-solid fa-list-check"></i>
+            <span>Tasks</span>
+        </div>
+        <div class="nav-item" onclick="switchTab('invite')">
+            <i class="fa-solid fa-user-plus"></i>
+            <span>Invite</span>
+        </div>
+        <div class="nav-item" onclick="switchTab('wallet')">
+            <i class="fa-solid fa-wallet"></i>
+            <span>Wallet</span>
+        </div>
+    </nav>
+
+    <!-- App Logic Script -->
+    <script src="app.js"></script>
+</body>
+</html>
