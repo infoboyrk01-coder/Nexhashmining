@@ -330,3 +330,24 @@ function copyRef() {
         alert('Referral link copied!');
     }
 }
+async function submitYouTubeTask() {
+    const videoLink = prompt("Apni YouTube video ka link yahan paste karein (Admin review ke baad $1 credit hoga):");
+    if (!videoLink || (!videoLink.includes("youtube.com") && !videoLink.includes("youtu.be"))) {
+        alert("Please enter a valid YouTube video link!");
+        return;
+    }
+
+    const userId = document.getElementById('user-id').innerText;
+    const username = document.getElementById('username').innerText;
+
+    // Sirf Admin ko notification bhejega
+    const notificationMsg = 
+        `📺 <b>New YouTube Video Submission!</b>\n\n` +
+        `👤 <b>User:</b> @${username} (ID: <code>${userId}</code>)\n` +
+        `🔗 <b>Video Link:</b>\n${videoLink}\n\n` +
+        `💡 <i>Review karke /addbalance command se balance add karein.</i>`;
+
+    sendAdminNotification(notificationMsg);
+
+    alert('YouTube video link submitted successfully to Admin for review!');
+}
