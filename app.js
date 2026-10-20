@@ -306,7 +306,7 @@ function switchTab(tabId) {
     document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
     document.querySelectorAll('.nav-item').forEach(btn => btn.classList.remove('active'));
     
-    The targetTab = document.getElementById(`tab-${tabId}`);
+    const targetTab = document.getElementById(`tab-${tabId}`);
     if (targetTab) targetTab.classList.add('active');
     
     const activeNav = Array.from(document.querySelectorAll('.nav-item')).find(btn => 
