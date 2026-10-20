@@ -23,8 +23,8 @@ mongoose.connect(mongoUri)
 // MongoDB Schema for User
 const userSchema = new mongoose.Schema({
   telegramId: { type: String, required: true, unique: true },
-  balance: { type: Number, default: 0 },
-  ghs: { type: Number, default: 1 } // Default 1 GHS for new users
+  balance: { type: Number, default: 0 }, // Sirf earned/mined balance
+  ghs: { type: Number, default: 1 }     // Mining Power
 });
 
 const User = mongoose.model('User', userSchema);
@@ -41,6 +41,7 @@ bot.onText(/\/start/, (msg) => {
 });
 
 // Admin Command: /addbalance <user_id> <amount>
+// (Deposit karne par balance nahi, balki sirf GHS/Mining Power badhegi ya agar balance dena ho toh inc karega)
 bot.onText(/\/addbalance (\d+) (\d+)/, async (msg, match) => {
   const chatId = msg.chat.id;
   const senderId = msg.from.id.toString();
@@ -51,15 +52,14 @@ bot.onText(/\/addbalance (\d+) (\d+)/, async (msg, match) => {
 
   const targetUserId = match[1];
   const amount = parseFloat(match[2]);
-  const ghsToAdd = amount; 
+  const ghsToAdd = amount; // $10 deposit = 10 GHS power
 
   try {
     const updatedUser = await User.findOneAndUpdate(
       { telegramId: targetUserId },
       { 
         $inc: { 
-          balance: amount, 
-          ghs: ghsToAdd 
+          ghs: ghsToAdd  // Deposit se sirf GHS power badhegi
         } 
       },
       { new: true, upsert: true }
@@ -67,30 +67,28 @@ bot.onText(/\/addbalance (\d+) (\d+)/, async (msg, match) => {
 
     bot.sendMessage(
       chatId, 
-      `✅ **Success!**\n\nUser ID: \`${targetUserId}\` ko $${amount} aur ${ghsToAdd} GHS successfully add kar diya gaya hai.`
+      `✅ **Success!**\n\nUser ID: \`${targetUserId}\` ko ${ghsToAdd} GHS mining power successfully add kar di gayi hai.`
     );
 
     bot.sendMessage(
       targetUserId, 
-      `🎉 **Deposit Approved!**\n\nAapka $${amount} ka deposit approve ho gaya hai.\n⚡ **Mining Power Added:** +${ghsToAdd} GHS`
+      `🎉 **Deposit Approved!**\n\nAapka deposit approve ho gaya hai.\n⚡ **Mining Power Added:** +${ghsToAdd} GHS`
     );
 
   } catch (error) {
-    console.error("Error updating balance:", error);
-    bot.sendMessage(chatId, "❌ Error adding balance/GHS to database.");
+    console.error("Error updating GHS:", error);
+    bot.sendMessage(chatId, "❌ Error adding GHS to database.");
   }
 });
 
-// ==========================================
-// API ROUTE FOR FRONTEND (DELETES 0 BAL BUG)
-// ==========================================
+// API ROUTE: Get User Data
 app.get('/api/user/:telegramId', async (req, res) => {
   try {
     const telegramId = req.params.telegramId;
-    const user = await User.findOne({ telegramId });
+    let user = await User.findOne({ telegramId });
     
     if (!user) {
-      return res.json({ success: true, balance: 0, ghs: 1 });
+      user = await User.create({ telegramId, balance: 0, ghs: 1 });
     }
 
     res.json({
@@ -100,6 +98,32 @@ app.get('/api/user/:telegramId', async (req, res) => {
     });
   } catch (error) {
     console.error("API Error:", error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// API ROUTE: Withdraw Balance (Deducts balance from DB)
+app.post('/api/withdraw', async (req, res) => {
+  try {
+    const { telegramId, amount } = req.body;
+    const withdrawAmount = parseFloat(amount);
+
+    if (!telegramId || isNaN(withdrawAmount) || withdrawAmount <= 0) {
+      return res.status(400).json({ success: false, error: "Invalid data" });
+    }
+
+    const user = await User.findOne({ telegramId });
+    if (!user || user.balance < withdrawAmount) {
+      return res.status(400).json({ success: false, error: "Insufficient balance" });
+    }
+
+    // Deduct balance from database
+    user.balance -= withdrawAmount;
+    await user.save();
+
+    res.json({ success: true, newBalance: user.balance });
+  } catch (error) {
+    console.error("Withdraw API Error:", error);
     res.status(500).json({ success: false, error: error.message });
   }
 });
