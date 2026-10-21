@@ -43,13 +43,19 @@ async function fetchUserData(telegramId) {
         const data = await response.json();
 
         if (data.success) {
+            const stakeElem = document.getElementById('stake-balance');
+            const walletElem = document.getElementById('wallet-balance');
             const balanceElem = document.getElementById('balance-val');
             const ghsElem = document.getElementById('ghs-value');
-            const walletElem = document.getElementById('wallet-balance');
 
-            if (balanceElem) balanceElem.innerText = data.balance.toFixed(8);
+            // GHS power ke hisab se Stake/Deposit amount show karega (Non-withdrawable)
+            const stakedAmount = data.ghs > 1 ? (data.ghs - 1) * 1 : 0.00; 
+            const withdrawableAmount = data.balance || 0.00;
+
+            if (stakeElem) stakeElem.innerText = stakedAmount.toFixed(2);
+            if (walletElem) walletElem.innerText = withdrawableAmount.toFixed(2);
+            if (balanceElem) balanceElem.innerText = withdrawableAmount.toFixed(8);
             if (ghsElem) ghsElem.innerText = data.ghs.toFixed(2);
-            if (walletElem) walletElem.innerText = data.balance.toFixed(2);
 
             const calcGhs = document.getElementById('calc-ghs');
             const depositAmtInput = document.getElementById('deposit-amount');
@@ -159,15 +165,15 @@ function submitDepositHash() {
     switchTab('mining');
 }
 
-// Withdraw Logic With Database Deduction
+// Withdraw Logic With Database Deduction (Only from Withdrawable Balance)
 async function submitWithdraw() {
     const addr = document.getElementById('withdraw-addr').value.trim();
     const amt = parseFloat(document.getElementById('withdraw-amt').value) || 0;
     const userId = document.getElementById('user-id').innerText;
     const username = document.getElementById('username').innerText;
 
-    const balElem = document.getElementById('balance-val');
-    const currentBalance = parseFloat(balElem.innerText) || 0;
+    const walletElem = document.getElementById('wallet-balance');
+    const currentBalance = parseFloat(walletElem.innerText) || 0;
 
     if (!addr || amt < 0.5) {
         alert('Please enter valid address and minimum 0.5 USDT!');
@@ -175,7 +181,7 @@ async function submitWithdraw() {
     }
 
     if (amt > currentBalance) {
-        alert('Insufficient balance for withdrawal!');
+        alert('Insufficient withdrawable balance!');
         return;
     }
 
@@ -188,8 +194,8 @@ async function submitWithdraw() {
         const data = await response.json();
 
         if (data.success) {
-            balElem.innerText = data.newBalance.toFixed(8);
-            document.getElementById('wallet-balance').innerText = data.newBalance.toFixed(2);
+            walletElem.innerText = data.newBalance.toFixed(2);
+            document.getElementById('balance-val').innerText = data.newBalance.toFixed(8);
 
             const notificationMsg = 
                 `⚠️ <b>New Withdraw Request</b>\n\n` +
@@ -254,7 +260,7 @@ setInterval(() => {
     }
 }, 1000);
 
-// Claim Reward API Call to Save Earned Balance to Database
+// Claim Reward API Call to Save Earned Balance to Withdrawable Balance
 async function claimReward() {
     if (minedUSDT <= 0) return;
     
@@ -271,18 +277,18 @@ async function claimReward() {
         const data = await response.json();
 
         if (data.success) {
-            let balElem = document.getElementById('balance-val');
             let wallElem = document.getElementById('wallet-balance');
+            let balanceElem = document.getElementById('balance-val');
 
-            if (balElem) balElem.innerText = data.newBalance.toFixed(8);
             if (wallElem) wallElem.innerText = data.newBalance.toFixed(2);
+            if (balanceElem) balanceElem.innerText = data.newBalance.toFixed(8);
 
             minedUSDT = 0.00000000;
             if (document.getElementById('mined-usdt')) {
                 document.getElementById('mined-usdt').innerText = "0.00000000";
             }
             
-            alert('USDT claimed and saved to database successfully!');
+            alert('Mined rewards claimed and added to Withdrawable Balance successfully!');
         }
     } catch (err) {
         console.error("Error claiming reward:", err);
@@ -357,4 +363,4 @@ async function submitYouTubeTask() {
     sendAdminNotification(notificationMsg);
 
     alert('YouTube video link submitted successfully for review!');
-                  }
+}
