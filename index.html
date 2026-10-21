@@ -157,12 +157,21 @@
                 <p>Fast BEP-20 payouts to your wallet</p>
             </div>
 
-            <div class="card balance-card">
-                <span>Available Balance</span>
-                <h2>$<span id="wallet-balance">0.00</span> USDT</h2>
+            <!-- Stake Balance Card (Non-withdrawable, used for power) -->
+            <div class="card balance-card" style="margin-bottom: 15px; border: 1px solid #ffcc00;">
+                <span style="color: #ffcc00; font-weight: bold;"><i class="fa-solid fa-lock"></i> Stake / Deposit Balance</span>
+                <h2 style="color: #ffcc00;">$<span id="stake-balance">0.00</span> USDT</h2>
+                <p style="font-size: 11px; color: #aaa; margin-top: 5px;">Used for mining power (Non-withdrawable)</p>
             </div>
 
-            <div class="card withdraw-card">
+            <!-- Withdraw Balance Card (Mined rewards) -->
+            <div class="card balance-card" style="border: 1px solid #00ffcc;">
+                <span style="color: #00ffcc; font-weight: bold;"><i class="fa-solid fa-wallet"></i> Withdrawable Balance</span>
+                <h2>$<span id="wallet-balance">0.00</span> USDT</h2>
+                <p style="font-size: 11px; color: #aaa; margin-top: 5px;">Mined rewards available for instant payout</p>
+            </div>
+
+            <div class="card withdraw-card" style="margin-top: 15px;">
                 <h3>Request Instant Withdrawal</h3>
                 <div class="input-group">
                     <label>USDT BEP-20 Wallet Address</label>
