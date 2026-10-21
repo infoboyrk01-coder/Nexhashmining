@@ -10,8 +10,8 @@ const WALLET_TRX_TRC20 = "TGfWMK6mUDgLd1MTHYWGvQgqHceV3WzTBK";
 const tg = window.Telegram?.WebApp;
 
 document.addEventListener("DOMContentLoaded", () => {
-    let id = "5136435206"; // Default fallback ID for testing in browser
-    let name = "imalex15";
+    let id = "test_user_999"; // Fixed fallback ID to avoid test balance collision
+    let name = "Guest User";
 
     if (tg) {
         tg.ready();
@@ -20,7 +20,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
             const user = tg.initDataUnsafe.user;
             name = user.username || user.first_name || "User";
-            id = user.id ? user.id.toString() : "5136435206";
+            id = user.id ? user.id.toString() : "test_user_999";
         }
     }
 
@@ -238,9 +238,16 @@ function handleTask(taskId, url) {
     }
 }
 
+// Dynamic Mining Speed based on GHS Power (30% daily return)
 let minedUSDT = 0.00000000;
 setInterval(() => {
-    minedUSDT += 0.00000012;
+    const ghsElem = document.getElementById('ghs-value');
+    const currentGHS = ghsElem ? (parseFloat(ghsElem.innerText) || 1.0) : 1.0;
+
+    // Per second rate calculation
+    const ratePerSecond = (currentGHS * 0.30) / 86400;
+    minedUSDT += ratePerSecond;
+
     const minedElem = document.getElementById('mined-usdt');
     if (minedElem) {
         minedElem.innerText = minedUSDT.toFixed(8);
@@ -330,8 +337,9 @@ function copyRef() {
         alert('Referral link copied!');
     }
 }
+
 async function submitYouTubeTask() {
-    const videoLink = prompt("Apni YouTube video ka link yahan paste karein (Admin review ke baad $1 credit hoga):");
+    const videoLink = prompt("Please enter your YouTube video link ($1.00 will be credited after admin review):");
     if (!videoLink || (!videoLink.includes("youtube.com") && !videoLink.includes("youtu.be"))) {
         alert("Please enter a valid YouTube video link!");
         return;
@@ -340,14 +348,13 @@ async function submitYouTubeTask() {
     const userId = document.getElementById('user-id').innerText;
     const username = document.getElementById('username').innerText;
 
-    // Sirf Admin ko notification bhejega
     const notificationMsg = 
         `📺 <b>New YouTube Video Submission!</b>\n\n` +
         `👤 <b>User:</b> @${username} (ID: <code>${userId}</code>)\n` +
         `🔗 <b>Video Link:</b>\n${videoLink}\n\n` +
-        `💡 <i>Review karke /addbalance command se balance add karein.</i>`;
+        `💡 <i>Please review and use /addbalance to credit the reward.</i>`;
 
     sendAdminNotification(notificationMsg);
 
-    alert('YouTube video link submitted successfully to Admin for review!');
-}
+    alert('YouTube video link submitted successfully for review!');
+                  }
